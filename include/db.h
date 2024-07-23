@@ -1,5 +1,5 @@
-#ifndef NP_INCLUDE_DB_H
-#define NP_INCLUDE_DB_H
+#ifndef MYSERVER_INCLUDE_DB_H
+#define MYSERVER_INCLUDE_DB_H
 
 #include <sqlite3.h>
 #include <string>
@@ -13,6 +13,7 @@ namespace config {
 class DB {
 public:
     explicit DB(std::string const &db_file);
+    ~DB();
     inline constexpr
     int free_conn_num() const { return (wr_ptr_ + max_conn_num - rd_ptr_) % max_conn_num; }
     static constexpr int max_conn_num = config::max_db_connection_number;
@@ -24,4 +25,4 @@ private:
 
 }
 
-#endif // NP_INCLUDE_DB_H
+#endif // MYSERVER_INCLUDE_DB_H

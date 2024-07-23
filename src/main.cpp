@@ -1,6 +1,10 @@
 #include <iostream>
+#include <db.h>
+#include <unistd.h>
 
 int main(int argc, char const *argv[]) {
-    std::cout << "hello, world" << std::endl;
+    using namespace myserver;
+    DB db("myserver.db");
+    sleep(5);
     return 0;
 }
