@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_all.hpp>
 #include "blocking_queue.h"
+#include "log.h"
 #include <thread>
 #include <iostream>
 #include <functional>
@@ -55,4 +56,16 @@ TEST_CASE("BlockingQueue works fine", "[unit][blocking-queue]") {
     }
 
     REQUIRE(std::ranges::all_of(bmp, std::identity{}));
+}
+
+TEST_CASE("logging system works fine", "[unit][log]") {
+    using namespace myserver::utils;
+    Log::instance().init(LOG_STORE_PATH, 1000, 1024, true);
+    log_info("hello, %s", "info");
+    log_debug("hello, %s", "debug");
+    log_error("hello, %s", "error");
+    log_warn("hello, %s", "warn");
+    using namespace std::literals;
+    std::this_thread::sleep_for(2s);
+    Log::instance().terminate();
 }

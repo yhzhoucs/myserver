@@ -2,6 +2,7 @@
 #define MYSERVER_INCLUDE_LOG_H_
 
 #include <unistd.h>
+#include <thread>
 #include <string>
 #include "blocking_queue.h"
 
@@ -13,25 +14,59 @@ public:
         static Log log;
         return log;
     }
-    void init();
+    static void async_log_helper() {
+        Log::instance().async_write_log();
+    }
+    enum Level {
+        DEBUG,
+        INFO,
+        WARN,
+        ERROR
+    };
+    ~Log();
+    void init(std::string const &log_store_path,
+              int max_log_line, int max_buffer_size, bool async = false);
+    void write_log(Level level, char const *format, ...);
+    void terminate() {
+        terminate_ = true;
+    }
 private:
     Log() = default;
-    FILE *log_file_ = nullptr;
-    BlockingQueue<std::string> messages_;
+    [[noreturn]] void async_write_log();
+    bool new_log_file();
+    int max_log_line_ = 0;
+    int max_buffer_size_ = 0;
+    char *log_buffer_ = nullptr;
+    std::string log_store_path_{};
+    int log_file_ = 0;
+    int log_line_ = 0;
+    bool async_ = false;
+    BlockingQueue<std::string> logs_{};
+    std::mutex mutex_{};
+    std::thread log_thread_{};
+    bool terminate_ = false;
 };
 
+template<typename... Args>
+constexpr void log_debug(Args&&... args) {
+    Log::instance().write_log(Log::DEBUG, std::forward<Args>(args)...);
 }
 
-#ifdef DEBUG
-#define LOG_DEBUG(format, ...) if(0 == m_close_log) {Log::instance()->write_log(0, format, ##__VA_ARGS__); Log::get_instance()->flush();}
-#define LOG_INFO(format, ...) if(0 == m_close_log) {Log::instance()->write_log(1, format, ##__VA_ARGS__); Log::get_instance()->flush();}
-#define LOG_WARN(format, ...) if(0 == m_close_log) {Log::instance()->write_log(2, format, ##__VA_ARGS__); Log::get_instance()->flush();}
-#define LOG_ERROR(format, ...) if(0 == m_close_log) {Log::instance()->write_log(3, format, ##__VA_ARGS__); Log::get_instance()->flush();}
-#else
-#define LOG_DEBUG(format, ...)
-#define LOG_INFO(format, ...)
-#define LOG_WARN(format, ...)
-#define LOG_ERROR(format, ...)
-#endif
+template<typename... Args>
+constexpr void log_info(Args&&... args) {
+    Log::instance().write_log(Log::INFO, std::forward<Args>(args)...);
+}
+
+template<typename... Args>
+constexpr void log_warn(Args&&... args) {
+    Log::instance().write_log(Log::WARN, std::forward<Args>(args)...);
+}
+
+template<typename... Args>
+constexpr void log_error(Args&&... args) {
+    Log::instance().write_log(Log::ERROR, std::forward<Args>(args)...);
+}
+
+}
 
 #endif // MYSERVER_INCLUDE_LOG_H_
