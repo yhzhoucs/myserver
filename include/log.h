@@ -14,9 +14,6 @@ public:
         static Log log;
         return log;
     }
-    static void async_log_helper() {
-        Log::instance().async_write_log();
-    }
     enum Level {
         DEBUG,
         INFO,

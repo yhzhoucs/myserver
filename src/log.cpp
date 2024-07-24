@@ -35,13 +35,14 @@ void myserver::utils::Log::init(std::string const &log_store_path,
     async_ = async;
     if (async_) {
         // start a log thread
-        log_thread_ = std::thread(Log::async_log_helper);
+        log_thread_ = std::thread(&Log::async_write_log, std::ref(*this));
         log_thread_.detach();
     }
 }
 
 void myserver::utils::Log::async_write_log() {
-    for (auto single_log = logs_.try_pop(); !terminate_; single_log = logs_.try_pop()) {
+    while (!terminate_) {
+        auto single_log = logs_.try_pop();
         if (single_log.has_value()) {
             std::lock_guard lk(mutex_);
             write(log_file_, single_log.value().c_str(), single_log.value().length());

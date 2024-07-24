@@ -12,9 +12,9 @@ target_compile_definitions(myserverlib PRIVATE ENABLE_LOG)
 # Add sqlite3 support. Ensure you have sqlite3 and its library 
 # installed in your machine.
 find_package(SQLite3 REQUIRED)
-target_link_libraries(myserverlib PUBLIC SQLite::SQLite3)
-
-target_link_libraries(myserverlib PUBLIC /lib/x86_64-linux-gnu/libuuid.so)
+# Add uuid support. Ensure you have libuuid installed.
+find_package(LibUUID REQUIRED)
+target_link_libraries(myserverlib PUBLIC SQLite::SQLite3 LibUUID::LibUUID)
 
 add_executable(myserver main.cpp)
 target_link_libraries(myserver PRIVATE myserver::myserverlib)

@@ -1,10 +1,9 @@
 #include <iostream>
-#include <db.h>
-#include <unistd.h>
+#include <format>
 
 int main(int argc, char const *argv[]) {
-    using namespace myserver;
-    DB db("myserver.db");
-    sleep(5);
+    using namespace std::literals;
+    auto constexpr format = "{}-{}"sv;
+    std::cout << std::format(format, 1, 2) << std::endl;
     return 0;
 }
