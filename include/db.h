@@ -1,5 +1,5 @@
-#ifndef MYSERVER_INCLUDE_DB_H
-#define MYSERVER_INCLUDE_DB_H
+#ifndef MYSERVER_INCLUDE_DB_H_
+#define MYSERVER_INCLUDE_DB_H_
 
 #include <sqlite3.h>
 #include <string>
@@ -25,4 +25,4 @@ private:
 
 }
 
-#endif // MYSERVER_INCLUDE_DB_H
+#endif // MYSERVER_INCLUDE_DB_H_
