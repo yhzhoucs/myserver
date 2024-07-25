@@ -1,5 +1,5 @@
-#ifndef MYSERVER_INCLUDE_BLOCKING_QUEUE_H_
-#define MYSERVER_INCLUDE_BLOCKING_QUEUE_H_
+#ifndef MYSERVER_INCLUDE_UTILS_H_
+#define MYSERVER_INCLUDE_UTILS_H_
 
 #include <mutex>
 #include <deque>
@@ -75,4 +75,4 @@ private:
 
 }
 
-#endif
+#endif // MYSERVER_INCLUDE_UTILS_H_

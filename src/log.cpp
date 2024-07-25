@@ -9,12 +9,12 @@
 #include <filesystem>
 #include <format>
 
-myserver::utils::Log::~Log() {
+myserver::Log::~Log() {
     close(log_file_);
     delete[] log_buffer_;
 }
 
-void myserver::utils::Log::init(std::string const &log_store_path,
+void myserver::Log::init(std::string const &log_store_path,
                                 int max_log_line, int max_buffer_size, bool async) {
     // create log store path
     log_store_path_ = log_store_path;
@@ -40,17 +40,14 @@ void myserver::utils::Log::init(std::string const &log_store_path,
     }
 }
 
-void myserver::utils::Log::async_write_log() {
-    while (!terminate_) {
-        auto single_log = logs_.try_pop();
-        if (single_log.has_value()) {
-            std::lock_guard lk(mutex_);
-            write(log_file_, single_log.value().c_str(), single_log.value().length());
-        }
+void myserver::Log::async_write_log() {
+    for (auto single_log = logs_.pop(); !terminate_; single_log = logs_.pop()) {
+        std::lock_guard lk(mutex_);
+        write(log_file_, single_log.c_str(), single_log.length());
     }
 }
 
-void myserver::utils::Log::write_log(Level level, const char *format, ...) {
+void myserver::Log::write_log(Level level, const char *format, ...) {
     {
         // write a log
         std::lock_guard lk(mutex_);
@@ -106,7 +103,7 @@ void myserver::utils::Log::write_log(Level level, const char *format, ...) {
     }
 }
 
-bool myserver::utils::Log::new_log_file() {
+bool myserver::Log::new_log_file() {
     std::time_t t = std::time(nullptr); // get time now
     std::tm* now = std::localtime(&t);
     uuid_t uuid; // generate uuid
@@ -119,6 +116,7 @@ bool myserver::utils::Log::new_log_file() {
             now->tm_hour, now->tm_min, now->tm_sec, std::string(uuid_str).substr(0, 6));
     std::filesystem::path path(log_store_path_);
     path /= log_file_name;
+    log_file_path_ = path.string();
     log_file_ = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (log_file_ < 0) {
         return false;
