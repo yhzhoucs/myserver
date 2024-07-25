@@ -88,4 +88,14 @@ TEST_CASE("logging system works fine", "[unit][log]") {
 
 TEST_CASE("json library usage", "[learn]") {
     using json = nlohmann::json;
+    std::string tmp = R"({"name":"John", "age":30, "car":null})";
+    json data = json::parse(tmp);
+    std::string name = data["name"];
+    int age = data["age"];
+    auto car = data["car"];
+    REQUIRE_THAT(name, Catch::Matchers::Equals("John"));
+    REQUIRE(age == 30);
+    REQUIRE(car.is_null());
+    auto hello = data["hello"];
+    REQUIRE(hello.is_null());
 }

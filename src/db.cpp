@@ -67,3 +67,11 @@ void myserver::UserCache::init() {
         sqlite3_free(z_err_msg);
     }
 }
+
+bool myserver::UserCache::verify(std::string const &name, std::string const &password) {
+    return users_.contains(name) && users_.at(name).second == password;
+}
+
+int myserver::UserCache::get_uuid(const std::string &name) {
+    return users_.at(name).first;
+}

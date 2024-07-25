@@ -9,7 +9,9 @@ add_library(myserver::myserverlib ALIAS myserverlib)
 target_include_directories(myserverlib PUBLIC 
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include)
-target_compile_definitions(myserverlib PRIVATE ENABLE_LOG)
+target_compile_definitions(myserverlib PRIVATE
+        ENABLE_LOG
+        SECRET="KIA")
 
 # Add sqlite3 support. Ensure you have sqlite3 and its library 
 # installed in your machine.
@@ -28,5 +30,6 @@ target_link_libraries(myserverlib PUBLIC nlohmann_json::nlohmann_json)
 
 add_executable(myserver main.cpp)
 target_link_libraries(myserver PRIVATE myserver::myserverlib)
-target_compile_definitions(myserver PRIVATE LOG_STORE_PATH="${PROJECT_BINARY_DIR}/logs/")
-target_compile_definitions(myserver PRIVATE DATABASE_PATH="${PROJECT_SOURCE_DIR}/myserver.db")
+target_compile_definitions(myserver PRIVATE
+        LOG_STORE_PATH="${PROJECT_BINARY_DIR}/logs/"
+        DATABASE_PATH="${PROJECT_SOURCE_DIR}/myserver.db")

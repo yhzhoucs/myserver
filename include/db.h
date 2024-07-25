@@ -66,13 +66,15 @@ private:
 
 class UserCache {
 public:
-    typedef std::map<int, std::pair<std::string, std::string>> UserMap;
+    typedef std::map<std::string, std::pair<int, std::string>> UserMap; // name -> (uuid, password)
     static UserCache &instance() {
         static UserCache cache;
         return cache;
     }
     static int callback(void *data, int argc, char **argv,char **az_col_name);
     void init();
+    bool verify(std::string const &name, std::string const &password);
+    int get_uuid(std::string const &name);
 private:
     UserCache() = default;
     UserMap users_{};
