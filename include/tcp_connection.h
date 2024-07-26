@@ -10,34 +10,39 @@ namespace myserver {
 int set_nonblocking(int fd);
 void add_fd(int epoll_fd, int fd, bool one_shot, bool et_mode);
 void remove_fd(int epoll_fd, int fd);
+void modify_fd(int epoll_fd, int fd, int ev, bool et_mode);
 
 class TcpConnection {
 public:
     explicit TcpConnection(int socket);
     bool read_data();
+    bool write_data();
     void process();
+    void process_internal(Arcade::OneGameIter it);
     static constexpr int read_buffer_size = 2048;
     static constexpr int write_buffer_size = 2048;
+    static int epoll_fd;
     enum REQUEST_TYPE {
         LOGIN,
         ACTION
     };
     enum RESPONSE_STATE {
-        NOP,
         WRONG_SECRET,
         BAD_REQUEST,
-        LOGIN_SUCCESS,
         LOGIN_FAILED,
         PAIRING,
-        FULL,
-        GAMING
+        PAIRING_SUCCEED,
+        FULL
     };
 private:
+    void reset();
     void process_read();
     void process_write();
+    void dispatch_across();
     bool handle_login(nlohmann::json &data);
     void handle_pairing(nlohmann::json &data);
     void handle_action(nlohmann::json &data);
+    void generate_response();
     int socket_;
     char read_buffer_[read_buffer_size]{};
     std::ptrdiff_t read_ptr_ = 0;

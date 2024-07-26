@@ -2,7 +2,9 @@ set(MYSERVERLIB_SOURCE
         db.cpp
         log.cpp
         tcp_connection.cpp
-        arcade.cpp)
+        arcade.cpp
+        thread_pool.cpp
+        server.cpp)
 
 add_library(myserverlib STATIC ${MYSERVERLIB_SOURCE})
 add_library(myserver::myserverlib ALIAS myserverlib)
