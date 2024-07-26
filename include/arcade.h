@@ -2,6 +2,7 @@
 #define MYSERVER_INCLUDE_ARCADE_H_
 
 #include "utils.h"
+#include "log.h"
 #include <mutex>
 #include <list>
 
@@ -26,6 +27,9 @@ public:
     static Arcade &instance() {
         static Arcade arcade;
         return arcade;
+    }
+    void init() {
+        log_info("Arcade initialized successfully.");
     }
     PAIRING_STATE add_player(int uuid, OneGameIter &one_game_iter);
 private:

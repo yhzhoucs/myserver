@@ -1,4 +1,5 @@
 #include "thread_pool.h"
+#include "log.h"
 
 void myserver::ThreadPool::work() {
     // handle with client requests
@@ -23,12 +24,13 @@ void myserver::ThreadPool::internal_work() {
 }
 
 void myserver::ThreadPool::init() {
-    for (auto &t : workers_) {
-        t = std::thread(&ThreadPool::work, this);
-        t.detach();
+    for (int i{}; i < max_worker_number; ++i) {
+        workers_.emplace_back(&ThreadPool::work, this);
+        workers_.back().detach();
     }
-    for (auto &t : internal_workers_) {
-        t = std::thread(&ThreadPool::internal_work, this);
-        t.detach();
+    for (int i{}; i <max_internal_worker_number; ++i) {
+        workers_.emplace_back(&ThreadPool::internal_work, this);
+        workers_.back().detach();
     }
+    log_info("Thread pool initialized successfully.");
 }

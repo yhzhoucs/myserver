@@ -53,7 +53,7 @@ int myserver::UserCache::callback(void *data, int argc, char **argv, char **az_c
     int uuid = std::stoi(argv[0]);
     std::string name = argv[1];
     std::string pwd = argv[2];
-    map->emplace(uuid, std::make_pair(name, pwd));
+    map->emplace(name, std::make_pair(uuid, pwd));
     return 0;
 }
 
@@ -65,6 +65,10 @@ void myserver::UserCache::init() {
     if (sqlite3_exec(conn, sql, callback, (void *)&users_, &z_err_msg) != SQLITE_OK) {
         log_error("user cache fetching user data failed: %s", z_err_msg);
         sqlite3_free(z_err_msg);
+    }
+    log_info("UserCache initialized successfully.");
+    for (auto &item : users_) {
+        log_debug("Fetch user info (%s, %d, %s).", item.first.c_str(), item.second.first, item.second.second.c_str());
     }
 }
 

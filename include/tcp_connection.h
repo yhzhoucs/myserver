@@ -14,7 +14,7 @@ void modify_fd(int epoll_fd, int fd, int ev, bool et_mode);
 
 class TcpConnection {
 public:
-    explicit TcpConnection(int socket);
+    TcpConnection(int socket, std::map<int, TcpConnection> &connection_house);
     bool read_data();
     bool write_data();
     void process();
@@ -34,6 +34,7 @@ public:
         PAIRING_SUCCEED,
         FULL
     };
+    static std::map<int, int> user_socket_map;
 private:
     void reset();
     void process_read();
@@ -51,6 +52,7 @@ private:
     Arcade::OneGameIter game_;
     RESPONSE_STATE response_state_;
     int user_uuid_ = -1;
+    std::map<int, TcpConnection> &connection_house_;
 };
 
 }

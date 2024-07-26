@@ -13,6 +13,7 @@ class Server {
 public:
     Server(std::string address, int port);
     void start_server();
+    [[nodiscard]] std::map<int, TcpConnection> const &connections() const { return connections_; };
     static constexpr int max_event_number = 100;
 private:
     bool handle_new_connection();

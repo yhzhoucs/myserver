@@ -12,6 +12,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 option(ENABLE_TEST "Build unit tests using catch2" ON)
 
 add_subdirectory(src)
+add_subdirectory(client)
 
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND ENABLE_TEST)
     include(CTest)

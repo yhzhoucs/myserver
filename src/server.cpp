@@ -19,6 +19,7 @@ void myserver::Server::start_server() {
     int ret{};
     int flag = 1;
     setsockopt(listen_fd_, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
+    log_info("Starting server at %s:%d...", address_str_.c_str(), port_);
     ret = bind(listen_fd_, (sockaddr *)&address_, sizeof(address_));
     assert(ret >= 0);
     ret = listen(listen_fd_, 5);
@@ -59,5 +60,9 @@ bool myserver::Server::handle_new_connection() {
         log_error("%s:errno is:%d", "accept error", errno);
         return false;
     }
-    connections_.emplace(conn_fd, TcpConnection(conn_fd));
+    char tmp[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &client_address.sin_addr, tmp, INET_ADDRSTRLEN);
+    log_info("Receive connection from %s:%d.", tmp, ntohs(client_address.sin_port));
+    connections_.emplace(conn_fd, TcpConnection(conn_fd, connections_));
+    return true;
 }

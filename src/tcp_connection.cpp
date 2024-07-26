@@ -1,5 +1,6 @@
 #include "tcp_connection.h"
 #include "db.h"
+#include "thread_pool.h"
 
 #include <sys/socket.h>
 #include <sys/epoll.h>
@@ -43,8 +44,11 @@ void myserver::modify_fd(int epoll_fd, int fd, int ev, bool et_mode) {
     epoll_ctl(epoll_fd, EPOLL_CTL_MOD, fd, &event);
 }
 
-myserver::TcpConnection::TcpConnection(int socket)
-    : socket_(socket) {
+int myserver::TcpConnection::epoll_fd = 0;
+std::map<int, int> myserver::TcpConnection::user_socket_map = {};
+
+myserver::TcpConnection::TcpConnection(int socket, std::map<int, TcpConnection> &connection_house)
+    : socket_(socket), connection_house_(connection_house) {
     // add event
     add_fd(epoll_fd, socket_, true, true);
     reset();
@@ -53,6 +57,7 @@ myserver::TcpConnection::TcpConnection(int socket)
 void myserver::TcpConnection::process() {
     process_read(); // generate response code
     process_write(); // generate response content
+    modify_fd(epoll_fd, socket_, EPOLLOUT, true);
 }
 
 void myserver::TcpConnection::process_internal(Arcade::OneGameIter it) {
@@ -71,7 +76,7 @@ void myserver::TcpConnection::process_read() {
         return;
     }
     auto type = data["type"];
-    if (type.is_null() || !isdigit(type)) {
+    if (type.is_null()) {
         response_state_ = BAD_REQUEST;
         return;
     }
@@ -115,11 +120,13 @@ void myserver::TcpConnection::process_write() {
             j["code"] = PAIRING;
             j["message"] = "pairing";
             std::strcpy(write_buffer_, to_string(j).c_str());
+            break;
         case PAIRING_SUCCEED:
             generate_response();
             dispatch_across(); // send message to the other player
             break;
     }
+    log_debug("now write buffer %s", write_buffer_);
     write_ptr_ = std::strlen(write_buffer_);
 }
 
@@ -149,8 +156,11 @@ bool myserver::TcpConnection::handle_login(nlohmann::json &data) {
         response_state_ = BAD_REQUEST;
         return false;
     }
+    log_debug("Receive login request user=%s", to_string(name).c_str());
     if (UserCache::instance().verify(name, pwd)) {
         user_uuid_ = UserCache::instance().get_uuid(name);
+        // add user socket record
+        user_socket_map.emplace(user_uuid_, socket_);
         return true;
     } else {
         response_state_ = LOGIN_FAILED;
@@ -185,15 +195,15 @@ void myserver::TcpConnection::handle_action(nlohmann::json &data) {
         response_state_ = BAD_REQUEST;
         return;
     }
-    if (pos < 0 || pos >= 9 || game_->chess_board[pos] != '0') {
+    if (pos < 0 || pos >= 9 || game_->chess_board[static_cast<int>(pos)] != '0') {
         response_state_ = BAD_REQUEST;
         return;
     }
     if (user_uuid_ == game_->player1) {
-        game_->chess_board[pos] = '1';
+        game_->chess_board[static_cast<int>(pos)] = '1';
         game_->current_acting = game_->player2;
     } else {
-        game_->chess_board[pos] = '2';
+        game_->chess_board[static_cast<int>(pos)] = '2';
         game_->current_acting = game_->player1;
     }
 }
@@ -232,8 +242,6 @@ bool myserver::TcpConnection::write_data() {
     }
 }
 
-int myserver::TcpConnection::epoll_fd = 0;
-
 void myserver::TcpConnection::reset() {
     read_ptr_ = 0;
     write_ptr_ = 0;
@@ -243,5 +251,7 @@ void myserver::TcpConnection::reset() {
 
 void myserver::TcpConnection::dispatch_across() {
     // inform the other player
-
+    int other_player = user_uuid_ == game_->player1 ? game_->player2 : game_->player1;
+    TcpConnection &other_player_conn = connection_house_.at(user_socket_map[other_player]);
+    ThreadPool::instance().new_internal_request(&other_player_conn, game_);
 }
