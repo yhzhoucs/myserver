@@ -23,3 +23,79 @@ myserver::Arcade::PAIRING_STATE myserver::Arcade::add_player(int uuid, OneGameIt
         }
     }
 }
+
+bool myserver::Arcade::judge(char const *chessboard, int &winner) {
+    // each row
+    for (int i = 0; i < 3; ++i) {
+        char head = chessboard[i * 3];
+        bool flag = true;
+        if (head != '0') {
+            for (int j = 1; j < 3; ++j) {
+                if (chessboard[i * 3 + j] != head) {
+                    flag = false;
+                    break;
+                }
+            }
+            if (flag) {
+                winner = head - '0';
+                return true;
+            }
+        }
+    }
+
+    // each column
+    for (int i = 0; i < 3; ++i) {
+        char head = chessboard[i];
+        bool flag = true;
+        if (head != '0') {
+            for (int j = 1; j < 3; ++j) {
+                if (chessboard[j * 3 + i] != head) {
+                    flag = false;
+                    break;
+                }
+            }
+            if (flag) {
+                winner = head - '0';
+                return true;
+            }
+        }
+    }
+
+    // diagonal
+    char head = chessboard[0];
+    if (head != '0') {
+        bool flag = true;
+        for (int i = 1; i < 3; ++i) {
+            if (head != chessboard[i * 3 + i]) {
+                flag = false;
+                break;
+            }
+        }
+        if (flag) {
+            winner = head - '0';
+            return true;
+        }
+    }
+    head = chessboard[2];
+    if (head != '0') {
+        bool flag = true;
+        for (int i = 1; i < 3; ++i) {
+            if (head != chessboard[i * 3 + 2 - i]) {
+                flag = false;
+                break;
+            }
+        }
+        if (flag) {
+            winner = head - '0';
+            return true;
+        }
+    }
+
+    for (int i = 0; i < 9; ++i) {
+        if (chessboard[i] == '0')
+            return false;
+    }
+
+    winner = 0;
+    return true;
+}

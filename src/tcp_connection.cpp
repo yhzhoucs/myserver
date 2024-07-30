@@ -66,6 +66,7 @@ void myserver::TcpConnection::process_internal(Arcade::OneGameIter it) {
     using nlohmann::json;
     generate_response();
     write_ptr_ = std::strlen(write_buffer_);
+    modify_fd(epoll_fd, socket_, EPOLLOUT, true);
 }
 
 void myserver::TcpConnection::process_read() {
@@ -80,6 +81,7 @@ void myserver::TcpConnection::process_read() {
         response_state_ = BAD_REQUEST;
         return;
     }
+    log_debug("receive request from client %d type = %d", user_uuid_, (int)type);
     switch(static_cast<REQUEST_TYPE>(type)) {
         case LOGIN:
             if (handle_login(data)) {
@@ -126,7 +128,6 @@ void myserver::TcpConnection::process_write() {
             dispatch_across(); // send message to the other player
             break;
     }
-    log_debug("now write buffer %s", write_buffer_);
     write_ptr_ = std::strlen(write_buffer_);
 }
 
@@ -200,21 +201,33 @@ void myserver::TcpConnection::handle_action(nlohmann::json &data) {
         return;
     }
     if (user_uuid_ == game_->player1) {
+        response_state_ = PAIRING_SUCCEED;
         game_->chess_board[static_cast<int>(pos)] = '1';
         game_->current_acting = game_->player2;
     } else {
+        response_state_ = PAIRING_SUCCEED;
         game_->chess_board[static_cast<int>(pos)] = '2';
         game_->current_acting = game_->player1;
     }
 }
 
 void myserver::TcpConnection::generate_response() {
+    int winner;
+    int game_over = Arcade::judge(game_->chess_board, winner);
     using nlohmann::json;
     json j;
-    j["code"] = PAIRING_SUCCEED;
-    j["current_acting"] = game_->current_acting;
-    j["chessboard"] = std::string(game_->chess_board);
-    std::strcpy(write_buffer_, to_string(j).c_str());
+    if (!game_over) {
+        j["code"] = PAIRING_SUCCEED;
+        j["current_acting"] = user_uuid_ == game_->current_acting;
+        j["chessboard"] = std::string(game_->chess_board);
+        std::strcpy(write_buffer_, to_string(j).c_str());
+    } else {
+        j["code"] = GAME_OVER;
+        j["tie"] = winner == 0;
+        j["is_winner"] = winner == user_uuid_;
+        j["chessboard"] = std::string(game_->chess_board);
+        std::strcpy(write_buffer_, to_string(j).c_str());
+    }
 }
 
 bool myserver::TcpConnection::write_data() {
@@ -223,6 +236,7 @@ bool myserver::TcpConnection::write_data() {
         reset();
         return true;
     }
+    log_debug("try to write socket %s to %d", write_buffer_, user_uuid_);
     int data_to_send = write_ptr_;
     while (true) {
         int ret = send(socket_, write_buffer_, data_to_send, 0);

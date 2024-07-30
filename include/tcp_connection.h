@@ -32,7 +32,8 @@ public:
         LOGIN_FAILED,
         PAIRING,
         PAIRING_SUCCEED,
-        FULL
+        FULL,
+        GAME_OVER
     };
     static std::map<int, int> user_socket_map;
 private:

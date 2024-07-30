@@ -28,6 +28,7 @@ public:
         static Arcade arcade;
         return arcade;
     }
+    static bool judge(char const *chessboard, int &winner);
     void init() {
         log_info("Arcade initialized successfully.");
     }
