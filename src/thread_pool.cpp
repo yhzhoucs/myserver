@@ -6,12 +6,13 @@ void myserver::ThreadPool::work() {
     while (true) {
         Task task = requests_.pop();
         auto &[conn, type] = task;
-        if (type == 0) {
-            // read
-            if (conn->read_data()) {
-                conn->process();
-            }
-        }
+        conn->process();
+//        if (type == 0) {
+//            // read
+//            if (conn->read_data()) {
+//                conn->process();
+//            }
+//        }
     }
 }
 

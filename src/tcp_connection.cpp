@@ -46,9 +46,10 @@ void myserver::modify_fd(int epoll_fd, int fd, int ev, bool et_mode) {
 
 int myserver::TcpConnection::epoll_fd = 0;
 std::map<int, int> myserver::TcpConnection::user_socket_map = {};
+std::map<int, int> myserver::TcpConnection::socket_user_map = {};
 
 myserver::TcpConnection::TcpConnection(int socket, std::map<int, TcpConnection> &connection_house)
-    : socket_(socket), connection_house_(connection_house) {
+    : socket_(socket), connection_house_(connection_house), response_state_(BAD_REQUEST) {
     // add event
     add_fd(epoll_fd, socket_, true, true);
     reset();
@@ -63,10 +64,19 @@ void myserver::TcpConnection::process() {
 void myserver::TcpConnection::process_internal(Arcade::OneGameIter it) {
     // handle signal from enemy thread
     game_ = it;
-    using nlohmann::json;
     generate_response();
     write_ptr_ = std::strlen(write_buffer_);
     modify_fd(epoll_fd, socket_, EPOLLOUT, true);
+}
+
+void myserver::TcpConnection::inform_user_logout() {
+    using nlohmann::json;
+    json j;
+    j["code"] = RIVAL_LOGOUT;
+    std::strcpy(write_buffer_, to_string(j).c_str());
+    write_ptr_ = std::strlen(write_buffer_);
+    // force write
+    send(socket_, write_buffer_, write_ptr_, 0);
 }
 
 void myserver::TcpConnection::process_read() {
@@ -162,6 +172,7 @@ bool myserver::TcpConnection::handle_login(nlohmann::json &data) {
         user_uuid_ = UserCache::instance().get_uuid(name);
         // add user socket record
         user_socket_map.emplace(user_uuid_, socket_);
+        socket_user_map.emplace(socket_, user_uuid_);
         return true;
     } else {
         response_state_ = LOGIN_FAILED;

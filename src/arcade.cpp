@@ -99,3 +99,22 @@ bool myserver::Arcade::judge(char const *chessboard, int &winner) {
     winner = 0;
     return true;
 }
+
+void myserver::Arcade::erase_player(int user_id, int &rival_user_id) {
+    // delete possible waiting user
+    if (users_waiting_.erase(user_id)) {
+        rival_user_id = -1; // no other user
+        return;
+    }
+    // delete games concerning user
+    std::list<OneGame>::iterator it;
+    for (it = games_.begin(); it != games_.end(); ++it) {
+        if (it->player1 == user_id || it->player2 == user_id) {
+            break;
+        }
+    }
+    if (it == games_.end()) return;
+    int other_player = user_id == it->player1 ? it->player2 : it->player1;
+    games_.erase(it);
+    rival_user_id = other_player;
+}

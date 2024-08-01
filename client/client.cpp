@@ -1,11 +1,68 @@
 #include "client.h"
 #include <unistd.h>
-#include <cstdlib>
 #include <cstdio>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <sys/types.h>
+#include <signal.h>
+#include <termios.h>
+
+char *get_password(char const *prompt) {
+    static char buf[MAX_PASS_LEN + 1];
+    char *ptr;
+    sigset_t sig, osig;
+    struct termios ts, ots;
+    FILE *fp;
+    int c;
+    if ((fp = fopen(ctermid(NULL), "r+")) == NULL)
+        return NULL;
+    setbuf(fp, NULL);
+
+    sigemptyset(&sig);
+    sigaddset(&sig, SIGINT);
+    sigaddset(&sig, SIGTSTP);
+    sigprocmask(SIG_BLOCK, &sig, &osig);
+
+    tcgetattr(fileno(fp), &ts);
+    ots = ts;
+    ts.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL);
+    tcsetattr(fileno(fp), TCSAFLUSH, &ts);
+    fputs(prompt, fp);
+
+    ptr = buf;
+    while ((c = getc(fp)) != EOF && c != '\n')
+        if (ptr < &buf[MAX_PASS_LEN])
+            *ptr++ = c;
+    *ptr = 0;
+    putc('\n', fp);
+
+    tcsetattr(fileno(fp), TCSAFLUSH, &ots);
+    sigprocmask(SIG_SETMASK, &osig, NULL);
+    fclose(fp);
+    return buf;
+}
+
+void clear_screen() {
+    printf("\033[H");
+    printf("\033[J");
+}
+
+void print_title(char const *username) {
+    printf("\033[35;40m");
+    printf("############################################################\n");
+    printf("############################################################\n");
+    printf("###################### W e l c o m e #######################\n");
+    printf("### Dedicated to ZH. \n");
+    printf("### Enter your pos in coordinate format `x,y` start from 1.\n");
+    printf("### For example, \n");
+    printf("### > 1,1 will put your mark on the left-top of the chessboard.\n");
+    if (username != NULL) {
+        printf("### User: %s\n", username);
+    }
+    printf("### \n\n");
+    printf("\033[0;0m");
+}
 
 int set_nonblocking(int fd) {
     int old = fcntl(fd, F_GETFL);
@@ -42,34 +99,39 @@ void modify_fd(int epoll_fd, int fd, int ev, bool et_mode) {
     epoll_ctl(epoll_fd, EPOLL_CTL_MOD, fd, &event);
 }
 
-void handle_response() {
+bool handle_response() {
     nlohmann::json j = nlohmann::json::parse(std::string(receive_buffer));
     receive_size = 0;
     RESPONSE_STATE response = j["code"];
+    clear_screen();
+    print_title(username);
     switch (response) {
         case WRONG_SECRET:
             printf("wrong secret error\n");
-            std::exit(-1);
+            return false;
         case BAD_REQUEST:
             printf("bad request error\n");
-            std::exit(-1);
+            return false;
         case LOGIN_FAILED:
             printf("login failed error\n");
-            std::exit(-1);
+            return false;
         case FULL:
             printf("server busy\n");
-            std::exit(-1);
+            return false;
         case PAIRING:
             printf("pairing\n");
             // reset epoll event for continuously receive pairing result from server
             modify_fd(epoll_fd, socket_fd, EPOLLIN, true);
-            break;
+            return true;
         case PAIRING_SUCCEED:
             handle_gaming(j);
-            break;
+            return true;
         case GAME_OVER:
             handle_game_over(j);
-            break;
+            return false;
+        case RIVAL_LOGOUT:
+            printf("rival logout\n");
+            return false;
     }
 }
 
@@ -97,6 +159,7 @@ void print_chessboard(char const *chessboard) {
 void handle_gaming(nlohmann::json &j) {
     std::string chessboard = j["chessboard"];
     print_chessboard(chessboard.c_str());
+    std::putchar('\n');
     bool current_acting = j["current_acting"];
     if (!current_acting) {
         printf("waiting for the other player.\n");
@@ -107,7 +170,7 @@ void handle_gaming(nlohmann::json &j) {
     request["secret"] = "KIA";
     request["type"] = 1; // action
     int x, y;
-    std::printf("enter your pos (format coordinate `x,y` start from 1): ");
+    std::printf("> ");
     std::scanf("%d,%d", &x, &y);
     request["pos"] = (x-1) * 3 + y - 1;
     std::strcpy(send_buffer, to_string(request).c_str());
@@ -119,6 +182,7 @@ void handle_gaming(nlohmann::json &j) {
 void handle_game_over(nlohmann::json &j) {
     std::string chessboard = j["chessboard"];
     print_chessboard(chessboard.c_str());
+    std::putchar('\n');
     std::printf("game over\n");
     bool tie = j["tie"];
     if (tie) {
@@ -131,8 +195,6 @@ void handle_game_over(nlohmann::json &j) {
             std::printf("you lose!\n");
         }
     }
-    running = false;
-    close(socket_fd);
 }
 
 bool read_socket() {

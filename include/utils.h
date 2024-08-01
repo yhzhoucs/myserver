@@ -5,6 +5,7 @@
 #include <deque>
 #include <condition_variable>
 #include <optional>
+#include <algorithm>
 
 namespace myserver::utils {
 
@@ -56,6 +57,18 @@ public:
         }
         not_full_cv_.notify_one();
         return std::move(tmp);
+    }
+    template<typename U>
+    requires std::is_convertible_v<std::remove_cvref_t<U>, T>
+    bool erase(U &&value) {
+        std::lock_guard lk(mutex_);
+        auto it = std::find(data_.begin(), data_.end(), (T)value);
+        if (it != data_.end()) {
+            data_.erase(it);
+            not_full_cv_.notify_one();
+            return true;
+        }
+        return false;
     }
     bool empty() const {
         std::lock_guard lk(mutex_);

@@ -33,6 +33,7 @@ public:
         log_info("Arcade initialized successfully.");
     }
     PAIRING_STATE add_player(int uuid, OneGameIter &one_game_iter);
+    void erase_player(int user_id, int &rival_user_id);
 private:
     int game_uuid_{};
     utils::BlockingQueue<int> users_waiting_;

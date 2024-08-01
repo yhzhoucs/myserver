@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <nlohmann/json.hpp>
+
 #include "arcade.h"
 
 namespace myserver {
@@ -14,14 +15,6 @@ void modify_fd(int epoll_fd, int fd, int ev, bool et_mode);
 
 class TcpConnection {
 public:
-    TcpConnection(int socket, std::map<int, TcpConnection> &connection_house);
-    bool read_data();
-    bool write_data();
-    void process();
-    void process_internal(Arcade::OneGameIter it);
-    static constexpr int read_buffer_size = 2048;
-    static constexpr int write_buffer_size = 2048;
-    static int epoll_fd;
     enum REQUEST_TYPE {
         LOGIN,
         ACTION
@@ -33,9 +26,20 @@ public:
         PAIRING,
         PAIRING_SUCCEED,
         FULL,
-        GAME_OVER
+        GAME_OVER,
+        RIVAL_LOGOUT
     };
+    TcpConnection(int socket, std::map<int, TcpConnection> &connection_house);
+    bool read_data();
+    bool write_data();
+    void process();
+    void process_internal(Arcade::OneGameIter it);
+    void inform_user_logout();
+    static constexpr int read_buffer_size = 2048;
+    static constexpr int write_buffer_size = 2048;
+    static int epoll_fd;
     static std::map<int, int> user_socket_map;
+    static std::map<int, int> socket_user_map;
 private:
     void reset();
     void process_read();
