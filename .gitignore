@@ -1,4 +1,10 @@
+# cpp build directory
 build
 cmake-build-debug
+
+# rust build directory
+target
+
+# ide configuration
 .vscode
 .idea

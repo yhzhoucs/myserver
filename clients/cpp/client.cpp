@@ -133,6 +133,7 @@ bool handle_response() {
             printf("rival logout\n");
             return false;
     }
+    return false;
 }
 
 void print_chessboard(char const *chessboard) {
