@@ -5,7 +5,11 @@ use serde_json;
 use std::result::Result;
 use std::convert::TryFrom;
 use std::str;
-use termion;
+use crossterm::{
+    cursor, terminal,
+    style::{ SetBackgroundColor, SetForegroundColor },
+    style::Color::{Black, Magenta, Reset}
+};
 
 enum ResponseState {
     WrongSecret,
@@ -146,8 +150,10 @@ impl Client {
     }
 
     pub fn print_title(&self) {
-        print!("{}{}", termion::color::Bg(termion::color::Black),
-               termion::color::Fg(termion::color::Magenta));
+        crossterm::queue!(stdout(),
+            SetBackgroundColor(Black),
+            SetForegroundColor(Magenta)
+        ).expect("queue terminal command failed");
         println!("############################################################");
         println!("############################################################");
         println!("###################### W e l c o m e #######################");
@@ -159,8 +165,10 @@ impl Client {
             println!("### User: {}", self.username.as_ref().unwrap());
         }
         println!("### \n");
-        print!("{}{}", termion::color::Bg(termion::color::Reset),
-               termion::color::Fg(termion::color::Reset));
+        crossterm::queue!(stdout(),
+            SetBackgroundColor(Reset),
+            SetForegroundColor(Reset)
+        ).expect("queue terminal command failed");
     }
 
     fn handle_gaming(&mut self) -> Result<(), std::io::Error> {
@@ -226,7 +234,10 @@ impl Client {
     }
 
     pub fn clear_screen() {
-        print!("{}", termion::cursor::Goto(1,1));
-        print!("{}", termion::clear::AfterCursor);
+        crossterm::queue!(stdout(),
+            cursor::MoveTo(0,0),
+            terminal::Clear(terminal::ClearType::All))
+            .expect("queue terminal command failed");
+        stdout().flush().expect("flush output stream failed");
     }
 }

@@ -2,7 +2,7 @@ use std::thread::sleep;
 use std::time::Duration;
 use client::Client;
 use std::io::{stdin, stdout, Write};
-use termion::input::TermRead;
+use rpassword;
 
 mod client;
 
@@ -11,11 +11,7 @@ fn read_userinfo() -> (String, String) {
     stdout().flush().expect("flush output stream failed");
     let mut username = String::new();
     stdin().read_line(&mut username).expect("read input failed");
-    print!("password: ");
-    stdout().flush().expect("flush output stream failed");
-    let mut stdin = stdin().lock();
-    let mut stdout = stdout().lock();
-    let password = stdin.read_passwd(&mut stdout).unwrap().unwrap();
+    let password = rpassword::prompt_password("password: ").unwrap();
     (username, password)
 }
 
