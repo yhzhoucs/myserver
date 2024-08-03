@@ -38,7 +38,7 @@
 - CMake
 - Sqlite, LibUUID
 
-服务器的用户数据采用 Sqlite3 存储，并使用 LibUUID 来生成日志文件的唯一编号。代码里用到了 Concepts 相关的语法，因此**需要支持 C++20 的编译器**来编译。项目使用 FetchContent 来下载和安装依赖库，因此请确保你的 CMake 版本**支持 FetchContent **。我使用的版本是 CMake 3.30.2 。服务器使用 Unix 系统调用完成构建，因此只能在类 Unix 系统上运行。
+服务器的用户数据采用 Sqlite3 存储，并使用 LibUUID 来生成日志文件的唯一编号。代码里用到了 Concepts 相关的语法，因此**需要支持 C++20 的编译器**来编译。项目使用 FetchContent 来下载和安装依赖库，因此请确保你的 CMake 版本**支持 FetchContent**。我使用的版本是 CMake 3.30.2 。服务器使用 Unix 系统调用完成构建，因此只能在类 Unix 系统上运行。
 
 
 
@@ -80,7 +80,7 @@ cmake --build build --target myserver
 
 客户端是一个 stand-alone 的项目，直接在 clients/cpp 目录下编译。
 
-因为这个客户端使用了 Unix 的系统调用和套接字实现，所以只能在类 Unix 系统上运行。**如果你想在 Windows 上运行，请直接使用另一个由 Rust 实现的客户端。**客户端本身使用纯 C 实现，但它依赖的 json 库需要 C++11 的支持，因此你需要一个支持 C++11 的编译器。客户端使用 FetchContent 来下载和安装 json 依赖库，因此请确保你的 CMake 版本**支持 FetchContent **。
+因为这个客户端使用了 Unix 的系统调用和套接字实现，所以只能在类 Unix 系统上运行。**如果你想在 Windows 上运行，请直接使用另一个由 Rust 实现的客户端。** 客户端本身使用纯 C 实现，但它依赖的 json 库需要 C++11 的支持，因此你需要一个支持 C++11 的编译器。客户端使用 FetchContent 来下载和安装 json 依赖库，因此请确保你的 CMake 版本**支持 FetchContent**。
 
 
 
